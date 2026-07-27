@@ -76,16 +76,23 @@ Pan_TE 早有 te-looker 槽位(`dtr run --genome <fa> --out <dir> --threads <n>`
 
 ```
 dtr run --genome <fa> --out <dir> [--threads N] [--min-count C] [--w W]
-        [--dfam-hmm H --enable-known-hmm-discovery] [--window-stride N]   # 接受但暂未实现,优雅忽略
-  └─ te-discover (A1 extend-to-consensus,替 cd-hit) → consensi + members.bed (+ tandem 轨)
-  └─ te-refine   (spoa gapped POA 精修 members)      → <dir>/families.fasta
+        [--dfam-hmm H --enable-known-hmm-discovery] [--final-gated]
+  └─ te-discover (A1 extend-to-consensus,替 cd-hit) → disc.consensi + disc.members.bed
+  └─ te-refine   (spoa gapped POA 精修 de novo members) → families.fasta
+  └─ dtr-hmm     (Track 1: nhmmer --tblout → overlap/copy gate → known_hmm.members.bed)
+  └─ te-refine   (Track 1 POA) → known_hmm.families.fasta → append 至 raw families
+  └─ --final-gated: dtr-stitch → dtr-gate/CD-HIT → families.fasta + te-looker-gated-v1 provenance
+
+Track 2 partial tools: dtr-track2 wires dtr-window → dtr-lsh → dtr-community → dtr-component-poa → dtr-nonte-guard(optional, manifest-auditable) → dtr-copy → dtr-structure → dtr-accept-audit; all outputs retain family_call=false / mode=partial, acceptance_complete=false, and final_library=null.
 ```
 
-**接进 Pan_TE(已做):** ① `Pan_TE/bin/` 软链 `dtr`/`te-discover`/`te-refine`/`te-seed` → `core/target/release/*`;② `Pan_TE/bin/Pan_TE` 的 `resolve_te_looker_bin` 加了 `BIN_DIR/dtr` 兜底,使其像其它检测器一样自动从 `bin/` 找到 dtr。下游 `combine_results` 的 `cd-hit-est` 正常消费 `families.fasta`(实测 24→8 去冗)。
-> 前置:`cd core && cargo build --release`(软链指向 gitignore 的 target/);te-refine 的 spoa 路径硬编码(本机 PGTA env)。HMM Track-1 seeding 与 graph window-stride 为后续工作。
+Track 1 只在同时给出 `--dfam-hmm` 与 `--enable-known-hmm-discovery` 时运行。`dtr-hmm` 以 0-based half-open BED 输出命中；先在同一模型/染色体的重叠域中保留最高分命中（不将双链同位点重复计为两个拷贝），再要求 ≥5 个长度 ≥80 bp 的成员。最终仍由统一 copy/length gate 与跨 seed merge 决定是否提升到输出库。
+
+**接进 Pan_TE(已做):** ① `Pan_TE/bin/` 软链 `dtr`/`te-discover`/`te-refine`/`te-seed` → `core/target/release/*`;② `Pan_TE/bin/Pan_TE` 的 `resolve_te_looker_bin` 加了 `BIN_DIR/dtr` 兜底,使其像其它检测器一样自动从 `bin/` 找到 dtr。下游 `combine_results` 的 `cd-hit-est` 正常消费 `families.fasta`。
+> 前置:`cd core && cargo build --release`; Track 1 需要 `nhmmer`，精修需要 `spoa`。HMM Track-1 已实现；graph window-stride/Track 2 仍为后续工作。
 
 ## 后续(规划)
 
-- `dtr` 内 HMM Track-1(--dfam-hmm)、把 A1/refine 重构进 lib 让 `dtr` 全程 in-process(免 subprocess)、sweep-line 覆盖记账、striped-lock 哈希、exact concat 零拷贝、真实多 Gb 端到端 mask 率。
+- Track 2 已有 H0 spaced-seed 成本门禁、全局 hash-bottom 候选窗口、受限 MinHash/LSH、确定性连通容器、Louvain-style 局部社区细分、组件 POA、BLASTN copy catalog 及显式 non-TE reference guard。拟南芥 rRNA guard 在 7 条 provisional consensus 中拒绝了 6 条，说明 copy/POA 不足以证明 TE。所有中间物均明确 `mode=partial` / `family_call=false`，绝不进入最终库；非-TE panel 已可覆盖细胞器、rRNA、tRNA 与 snRNA；蛋白/宿主基因守卫仍是完整接纳的缺口。下一阶段是完整 Leiden aggregation、由目前的保守结构审计驱动的边界重估、LTR/TIR/Helitron 的专用证据及 G1–G6 审计，之后才可接入最终 family gate。其后为把 A1/refine 重构进 lib 让 `dtr` 全程 in-process(免 subprocess)、sweep-line 覆盖记账、striped-lock 哈希、exact concat 零拷贝、真实多 Gb 端到端 mask 率。
 
 设计依据:`../docs/V4_DESIGN.md` §A/§3;原型与 masking 实证:`../docs/DESIGN_REVIEW.md`。
