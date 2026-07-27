@@ -27,7 +27,7 @@ fn fasta_ids(p: &str) -> Vec<String> {
     });
     BufReader::new(f)
         .lines()
-        .filter_map(|l| l.ok())
+        .map_while(Result::ok)
         .filter_map(|l| {
             l.strip_prefix('>')
                 .map(|h| h.split_whitespace().next().unwrap_or("").to_string())

@@ -27,7 +27,7 @@ fn need(a: &[String], k: &str) -> String {
 fn parse(path: &str) -> Vec<I> {
     BufReader::new(File::open(path).unwrap())
         .lines()
-        .filter_map(Result::ok)
+        .map_while(Result::ok)
         .filter_map(|l| {
             let f: Vec<&str> = l.split("\t").collect();
             if f.len() < 4 {

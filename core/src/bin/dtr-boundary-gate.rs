@@ -57,7 +57,7 @@ fn coverage(path: &str) -> HashMap<String, usize> {
     let mut x: HashMap<(String, String), Vec<(usize, usize)>> = HashMap::new();
     for l in BufReader::new(File::open(path).unwrap())
         .lines()
-        .filter_map(Result::ok)
+        .map_while(Result::ok)
     {
         let f: Vec<_> = l.split('\t').collect();
         if f.len() >= 4 {

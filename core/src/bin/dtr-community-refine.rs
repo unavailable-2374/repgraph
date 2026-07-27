@@ -19,7 +19,7 @@ fn need(a: &[String], k: &str) -> String {
 fn ids(path: &str) -> Vec<String> {
     BufReader::new(File::open(path).unwrap())
         .lines()
-        .filter_map(Result::ok)
+        .map_while(Result::ok)
         .filter_map(|x| {
             x.strip_prefix(">")
                 .map(|h| h.split_whitespace().next().unwrap().to_string())

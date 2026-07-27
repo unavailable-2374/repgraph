@@ -35,7 +35,7 @@ fn run(name: &str, args: &[String]) {
 }
 fn fasta_count(path: &Path) -> usize {
     std::io::BufRead::lines(std::io::BufReader::new(File::open(path).unwrap()))
-        .filter_map(Result::ok)
+        .map_while(Result::ok)
         .filter(|line| line.starts_with(">"))
         .count()
 }
@@ -60,7 +60,7 @@ fn main() {
     let window_json = out.join("window_provenance.json");
     run(
         "dtr-window",
-        &vec![
+        &[
             "--genome".into(),
             genome.clone(),
             "--out".into(),
@@ -75,7 +75,7 @@ fn main() {
     let lsh_json = out.join("lsh_provenance.json");
     run(
         "dtr-lsh",
-        &vec![
+        &[
             "--input".into(),
             windows.display().to_string(),
             "--edges".into(),
@@ -88,7 +88,7 @@ fn main() {
     let community_json = out.join("community_provenance.json");
     run(
         "dtr-community",
-        &vec![
+        &[
             "--nodes".into(),
             windows.display().to_string(),
             "--edges".into(),
@@ -103,7 +103,7 @@ fn main() {
     let community_refine_json = out.join("community_refinement_provenance.json");
     run(
         "dtr-community-refine",
-        &vec![
+        &[
             "--nodes".into(),
             windows.display().to_string(),
             "--edges".into(),
@@ -118,7 +118,7 @@ fn main() {
     let poa_json = out.join("poa_provenance.json");
     run(
         "dtr-component-poa",
-        &vec![
+        &[
             "--input".into(),
             windows.display().to_string(),
             "--membership".into(),
@@ -133,7 +133,7 @@ fn main() {
         let retained = out.join("non_te_retained.fa");
         run(
             "dtr-nonte-guard",
-            &vec![
+            &[
                 "--query".into(),
                 provisional.display().to_string(),
                 "--reference".into(),
@@ -159,7 +159,7 @@ fn main() {
     if fasta_count(&query) > 0 {
         run(
             "dtr-copy",
-            &vec![
+            &[
                 "--genome".into(),
                 genome.clone(),
                 "--query".into(),
@@ -181,7 +181,7 @@ fn main() {
     if fasta_count(&query) > 0 {
         run(
             "dtr-structure",
-            &vec![
+            &[
                 "--query".into(),
                 query.display().to_string(),
                 "--genome".into(),

@@ -20,7 +20,7 @@ fn need(a: &[String], k: &str) -> String {
 fn names(path: &str) -> Vec<String> {
     BufReader::new(File::open(path).unwrap())
         .lines()
-        .filter_map(Result::ok)
+        .map_while(Result::ok)
         .filter_map(|x| {
             x.strip_prefix(">")
                 .map(|h| h.split_whitespace().next().unwrap().to_string())
@@ -31,7 +31,7 @@ fn copy_stats(path: &str) -> HashMap<String, (usize, f64)> {
     let mut v: HashMap<String, (usize, f64)> = HashMap::new();
     for l in BufReader::new(File::open(path).unwrap())
         .lines()
-        .filter_map(Result::ok)
+        .map_while(Result::ok)
     {
         let f: Vec<&str> = l.split("\t").collect();
         if f.len() >= 5 {
@@ -61,7 +61,7 @@ fn structure(path: &str) -> HashMap<String, (bool, bool)> {
         .iter()
         .position(|x| *x == "structure_evidence")
         .unwrap_or(10);
-    for l in it.filter_map(Result::ok) {
+    for l in it.map_while(Result::ok) {
         let f: Vec<&str> = l.split("\t").collect();
         if f.len() > evidence {
             out.insert(
@@ -77,7 +77,7 @@ fn nonte(path: Option<String>) -> HashMap<String, String> {
     if let Some(p) = path {
         let mut it = BufReader::new(File::open(p).unwrap()).lines();
         let _ = it.next();
-        for l in it.filter_map(Result::ok) {
+        for l in it.map_while(Result::ok) {
             let f: Vec<&str> = l.split("\t").collect();
             if f.len() >= 2 {
                 out.insert(f[0].to_string(), f[1].to_string());
@@ -98,7 +98,7 @@ fn panel_complete(path: Option<String>) -> bool {
     let mut kinds = HashSet::new();
     let mut it = BufReader::new(File::open(p).unwrap()).lines();
     let _ = it.next();
-    for l in it.filter_map(Result::ok) {
+    for l in it.map_while(Result::ok) {
         let f: Vec<&str> = l.split("\t").collect();
         if f.len() >= 2 {
             kinds.insert(f[1].to_string());

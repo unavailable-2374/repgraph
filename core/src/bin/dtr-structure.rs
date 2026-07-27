@@ -59,7 +59,7 @@ fn genome(path: &str) -> HashMap<String, String> {
 fn copies(path: &str) -> Vec<Copy> {
     BufReader::new(File::open(path).unwrap())
         .lines()
-        .filter_map(Result::ok)
+        .map_while(Result::ok)
         .filter_map(|l| {
             let f: Vec<&str> = l.split("\t").collect();
             if f.len() < 4 {

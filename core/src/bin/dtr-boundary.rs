@@ -118,7 +118,7 @@ fn main() {
     let mut by: HashMap<String, Vec<Copy>> = HashMap::new();
     for l in BufReader::new(File::open(&copies).unwrap())
         .lines()
-        .filter_map(Result::ok)
+        .map_while(Result::ok)
     {
         let f: Vec<_> = l.split('\t').collect();
         if f.len() >= 4 {
